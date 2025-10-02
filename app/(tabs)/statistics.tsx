@@ -19,7 +19,7 @@ interface CategoryStats {
   descriptions?: string;
 }
 
-const API_BASE_URL = "http://192.168.45.63:8000";
+const API_BASE_URL = "https://api2.mieung.kr";
 
 export default function StatisticsScreen() {
   const { user } = useAuth();

@@ -42,10 +42,9 @@ const handleConfirm = (date: Date) => {
 
   useEffect(() => {
     loadCategories();
-  }, [user]);
+  }, [token]);
 
 const loadCategories = async () => {
-  if (!user) return;
 
   try {
     const startDate = new Date().toISOString().split("T")[0];
@@ -53,11 +52,11 @@ const loadCategories = async () => {
 
     const [expenseRes, incomeRes] = await Promise.all([
       axios.get(
-        `http://192.168.45.63:8000/categories?type=expense&startDate=${startDate}&endDate=${endDate}`,
+        `https://api2.mieung.kr/categories?type=expense&startDate=${startDate}&endDate=${endDate}`,
         { headers: { Authorization: `Bearer ${token}` } }
       ),
       axios.get(
-        `http://192.168.45.63:8000/categories?type=income&startDate=${startDate}&endDate=${endDate}`,
+        `https://api2.mieung.kr/categories?type=income&startDate=${startDate}&endDate=${endDate}`,
         { headers: { Authorization: `Bearer ${token}` } }
       ),
     ]);
@@ -74,47 +73,56 @@ const loadCategories = async () => {
   }
 };
 
-  const handleSave = async () => {
-    console.log("거래 저장 시도:");
-    if (!selectedCategory) {
-      Alert.alert('오류', '카테고리를 선택해주세요');
-      return;
-    }
+const handleSave = async () => {
+  console.log("거래 저장 시도:");
+  if (!selectedCategory) {
+    Alert.alert('오류', '카테고리를 선택해주세요');
+    return;
+  }
 
-    if (!amount || Number(amount) <= 0) {
-      Alert.alert('오류', '올바른 금액을 입력해주세요');
-      return;
-    }
+  if (!amount || Number(amount) <= 0) {
+    Alert.alert('오류', '올바른 금액을 입력해주세요');
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      
-      await axios.post(
-        'http://192.168.45.63:8000/transactions',
-        {
-          category_id: selectedCategory.id,
-          amount: Number(amount),
-          description: description.trim(),
-          transaction_date: transactionDate.toISOString(),
+  try {
+    const year = transactionDate.getFullYear();
+    const month = String(transactionDate.getMonth() + 1).padStart(2, "0");
+    const day = String(transactionDate.getDate()).padStart(2, "0");
+
+    const formattedDate = `${year}-${month}-${day}`; // 시간대 영향 제거
+
+    await axios.post(
+      'https://api2.mieung.kr/transactions',
+      {
+        category_id: selectedCategory.id,
+        amount: Number(amount),
+        description: description.trim(),
+        transaction_date: formattedDate,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        { headers: { Authorization: `Bearer ${token}`,
-                     "Content-Type": "application/json", 
-                    } }
-      );
+      }
+    );
 
-      setAmount('');
-      setDescription('');
-      setSelectedCategory(null);
-      setTransactionDate(new Date());
-      Alert.alert('성공', '거래가 저장되었습니다');
-    } catch (error) {
-      console.error('거래 저장 실패:', error);
-      Alert.alert('오류', '거래 저장에 실패했습니다');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setAmount('');
+    setDescription('');
+    setSelectedCategory(null);
+    setTransactionDate(new Date());
+    Alert.alert('성공', '거래가 저장되었습니다');
+  } catch (error) {
+    console.error('거래 저장 실패:', error);
+    Alert.alert('오류', '거래 저장에 실패했습니다');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const formatDate = (date: Date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(

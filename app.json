@@ -1,24 +1,38 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
+    "name": "오늘의 가계부",
     "slug": "bolt-expo-nativewind",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kimhunho.boltexponativewind"
     },
     "web": {
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": ["expo-router", "expo-font", "expo-web-browser"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser"
+    ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b9aa06d3-6218-44b5-a54c-09fc74746916"
+      }
+    },
+    "android": {
+      "package": "com.kimhunho.boltexponativewind"
     }
   }
 }

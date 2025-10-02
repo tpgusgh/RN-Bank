@@ -25,7 +25,6 @@ export default function HomeScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date()); // 현재 선택된 월
 
   const loadTransactions = async () => {
-    if (!user) return;
 
     try {
       const data = await fetchTransactions(token);

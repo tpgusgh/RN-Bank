@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Hop as Home, CirclePlus as PlusCircle, ChartBar as BarChart3, Settings } from 'lucide-react-native';
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets(); // Safe Area 인셋 값 가져오기
+
   return (
     <Tabs
       screenOptions={{
@@ -13,8 +16,8 @@ export default function TabLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E7EB',
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom, // 안전 영역 높이 추가
+          paddingBottom: 8 + insets.bottom, // 안전 영역만큼 padding 추가
           paddingTop: 8,
         },
         tabBarLabelStyle: {

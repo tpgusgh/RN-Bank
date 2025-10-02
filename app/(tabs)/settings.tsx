@@ -1,3 +1,4 @@
+import { Linking } from "react-native";
 import { useState, useEffect } from "react";
 import {
   View,
@@ -26,7 +27,7 @@ const COLORS = [
 ];
 
 export default function SettingsScreen() {
-  const { token, user, signOut } = useAuth();
+  const { token, user, signOut, email } = useAuth();
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -38,7 +39,7 @@ export default function SettingsScreen() {
   const [newCategoryColor, setNewCategoryColor] = useState(COLORS[0]);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = "http://192.168.45.63:8000";
+  const API_URL = "https://api2.mieung.kr";
 
   useEffect(() => {
     
@@ -46,7 +47,6 @@ export default function SettingsScreen() {
   }, [token]);
 
   const loadCategories = async () => {
-    if (!user) return;
     try {
       const startDate = new Date().toISOString().split("T")[0];
       const endDate = new Date().toISOString().split("T")[0];
@@ -166,6 +166,12 @@ useEffect(() => {
   }
 }, [categories]);
 
+  const handleContact = () => {
+    Linking.openURL("mailto:me@mieung.kr");
+  };
+
+
+
 
   return (
     <View style={styles.container}>
@@ -237,9 +243,16 @@ useEffect(() => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
+          
           <View style={styles.accountInfo}>
             <Text style={styles.accountLabel}>이메일</Text>
-            <Text style={styles.accountValue}>{user?.email}</Text>
+            <Text style={styles.accountValue}>{email}</Text>
+            <View style={styles.accountInfo}>
+            <Text style={styles.accountLabel}>문의</Text>
+            <TouchableOpacity style={styles.button} onPress={handleContact}>
+            <Text style={styles.buttonText}>me@mieung.kr</Text>
+            </TouchableOpacity>
+  </View>
           </View>
         </View>
 
@@ -307,7 +320,7 @@ useEffect(() => {
                 </TouchableOpacity>
               </View>
             </View>
-
+                
             <View style={styles.modalSection}>
               <Text style={styles.modalLabel}>색상</Text>
               <View style={styles.colorSelector}>
@@ -573,5 +586,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+    button: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    margin: 16,
+  },
+  buttonText: {
+    color: "#0a1eff",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });

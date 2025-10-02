@@ -18,7 +18,7 @@ export interface MonthlyStats {
   total: number;
 }
 
-const API_BASE_URL = "http://192.168.45.63:8000"; // 🔹 실제 API URL로 변경
+const API_BASE_URL = "https://api2.mieung.kr"; // 🔹 실제 API URL로 변경
 export async function fetchTransactions(token: string) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

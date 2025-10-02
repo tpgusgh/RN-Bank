@@ -6,6 +6,7 @@ interface AuthContextType {
   user: string | null; // email 저장
   token: string | null;
   loading: boolean;
+  email: string | null;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -13,13 +14,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = "http://192.168.45.63:8000"; // FastAPI 서버 주소 (에뮬레이터면 10.0.2.2)
+const API_URL = "https://api2.mieung.kr"; // FastAPI 서버 주소 (에뮬레이터면 10.0.2.2)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const [user, setUser] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState<string | null>(null);
 
 useEffect(() => {
   const loadUserData = async () => {
@@ -30,6 +32,7 @@ useEffect(() => {
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(storedUser);
+        setEmail(storedEmail);
         console.log("토큰 로드됨", storedToken);
       }
     } catch (e) {
@@ -65,7 +68,7 @@ const signIn = async (email: string, password: string) => {
     await AsyncStorage.setItem("user", email);
 
     setToken(token);
-    setUser(email);
+    setEmail(email);
 
     console.log("로그인 성공");
     return { error: null };
@@ -90,7 +93,7 @@ const signIn = async (email: string, password: string) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, token, loading, email ,signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
