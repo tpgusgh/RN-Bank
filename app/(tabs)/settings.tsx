@@ -154,8 +154,8 @@ export default function SettingsScreen() {
       },
     ]);
   };
-const incomeCategories = categories.filter(c => c.type === "expense");
-const expenseCategories = categories.filter(c => c.type === "income");
+const incomeCategories = categories.filter(c => c.type === "income");
+const expenseCategories = categories.filter(c => c.type === "expense");
 
 
 useEffect(() => {
@@ -288,6 +288,22 @@ useEffect(() => {
                 <TouchableOpacity
                   style={[
                     styles.typeButton,
+                    newCategoryType === 'income' && styles.typeButtonActive,
+                  ]}
+                  onPress={() => setNewCategoryType('income')}
+                >
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      newCategoryType === 'income' && styles.typeButtonTextActive,
+                    ]}
+                  >
+                    수익
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.typeButton,
                     newCategoryType === 'expense' && styles.typeButtonActive,
                   ]}
                   onPress={() => setNewCategoryType('expense')}
@@ -300,22 +316,6 @@ useEffect(() => {
                     ]}
                   >
                     지출
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.typeButton,
-                    newCategoryType === 'income' && styles.typeButtonActive,
-                  ]}
-                  onPress={() => setNewCategoryType('income')}
-                >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      newCategoryType === 'income' && styles.typeButtonTextActive,
-                    ]}
-                  >
-                    수익
                   </Text>
                 </TouchableOpacity>
               </View>

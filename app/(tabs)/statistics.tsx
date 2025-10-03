@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,30 +6,32 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useAuth } from '@/app/contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category } from '@/types/database';
+import { useFocusEffect } from 'expo-router';
 
 interface CategoryStats {
+  transactionId?: string; 
   category?: Category | null;
   total: number;
   count: number;
   percentage: number;
   descriptions?: string;
+  date?: string;
 }
 
 const API_BASE_URL = "https://api2.mieung.kr";
 
 export default function StatisticsScreen() {
-  const { user } = useAuth();
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
-  const [selectedType, setSelectedType] = useState<'income' | 'expense'>('expense');
+  const [selectedType, setSelectedType] = useState<'income' | 'expense'>('income');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [totalAmount, setTotalAmount] = useState(0);
   const [token, setToken] = useState<string | null>(null);
-
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   const formatDate = (date: Date) => {
@@ -74,9 +76,9 @@ export default function StatisticsScreen() {
       }
 
       const data = await res.json();
-      console.log("통계 데이터:", data);
 
       const transformedStats: CategoryStats[] = data.categoryStats.map((stat: any) => ({
+        transactionId: stat.transaction_id,
         category: {
           id: stat.category_id,
           name: stat.category_name,
@@ -86,6 +88,7 @@ export default function StatisticsScreen() {
         count: stat.count,
         percentage: stat.percentage,
         descriptions: stat.descriptions || "", 
+        date: stat.date || null,  
       }));
 
       setCategoryStats(transformedStats);
@@ -121,26 +124,76 @@ export default function StatisticsScreen() {
   const formatCurrency = (amount: number) => {
     return `₩${amount.toLocaleString('ko-KR')}`;
   };
+const handleDeleteTransaction = (transactionId?: string) => {
+  if (!transactionId) return;
+
+  Alert.alert(
+    "삭제 확인",
+    "정말 이 거래를 삭제하시겠습니까?",
+    [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const res = await fetch(`${API_BASE_URL}/statistics/transaction/${transactionId}`, {
+              method: "DELETE",
+              headers: {
+                "Authorization": `Bearer ${token?.trim()}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!res.ok) throw new Error(`삭제 실패: ${res.status}`);
+
+            setCategoryStats(prev =>
+              prev.filter(stat => stat.transactionId !== transactionId)
+            );
+          } catch (error) {
+            console.error("삭제 오류:", error);
+            Alert.alert("오류", "삭제에 실패했습니다.");
+          }
+        }
+      }
+    ]
+  );
+};
+
+useFocusEffect(
+  useCallback(() => {
+    setSelectedType("income");
+    loadStatistics();
+  }, [token])
+);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>카테고리별 통계</Text>
-
-        {/* 월 변경 UI */}
         <View style={styles.monthSelector}>
           <TouchableOpacity
             style={styles.monthButton}
-            onPress={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))}
+            onPress={() =>
+              setSelectedMonth(
+                new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1)
+              )
+            }
           >
             <Text style={styles.monthButtonText}>◀</Text>
           </TouchableOpacity>
 
-          <Text style={styles.headerSubtitle}>{formatMonth(selectedMonth)}</Text>
+          <Text style={[styles.headerSubtitle, { fontSize: 18 }]}>
+            {formatMonth(selectedMonth)}
+          </Text>
 
           <TouchableOpacity
             style={styles.monthButton}
-            onPress={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))}
+            onPress={() =>
+              setSelectedMonth(
+                new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1)
+              )
+            }
           >
             <Text style={styles.monthButtonText}>▶</Text>
           </TouchableOpacity>
@@ -148,23 +201,6 @@ export default function StatisticsScreen() {
       </View>
 
       <View style={styles.typeSelector}>
-        <TouchableOpacity
-          style={[
-            styles.typeButton,
-            selectedType === "expense" && styles.typeButtonActive,
-          ]}
-          onPress={() => setSelectedType("expense")}
-        >
-          <Text
-            style={[
-              styles.typeButtonText,
-              selectedType === "expense" && styles.typeButtonTextActive,
-            ]}
-          >
-            지출
-          </Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={[
             styles.typeButton,
@@ -179,6 +215,23 @@ export default function StatisticsScreen() {
             ]}
           >
             수익
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.typeButton,
+            selectedType === "expense" && styles.typeButtonActive,
+          ]}
+          onPress={() => setSelectedType("expense")}
+        >
+          <Text
+            style={[
+              styles.typeButtonText,
+              selectedType === "expense" && styles.typeButtonTextActive,
+            ]}
+          >
+            지출
           </Text>
         </TouchableOpacity>
       </View>
@@ -241,6 +294,10 @@ export default function StatisticsScreen() {
                   </Text>
                 ) : null}
 
+                {stat.date && (
+                  <Text style={styles.statDate}>{stat.date}</Text>
+                )}
+
                 <View style={styles.progressBar}>
                   <View
                     style={[
@@ -261,6 +318,14 @@ export default function StatisticsScreen() {
                     {stat.percentage.toFixed(1)}%
                   </Text>
                 </View>
+
+                {/* 삭제 버튼 */}
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteTransaction(stat.transactionId)}
+                >
+                  <Text style={styles.deleteButtonText}>삭제</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </View>
@@ -269,7 +334,6 @@ export default function StatisticsScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { backgroundColor: '#FFFFFF', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
@@ -304,4 +368,15 @@ const styles = StyleSheet.create({
   statPercentage: { fontSize: 16, fontWeight: '600', color: '#6B7280' },
   emptyContainer: { padding: 40, alignItems: 'center' },
   emptyText: { fontSize: 14, color: '#9CA3AF' },
+  deleteButton: {
+  padding: 6,
+  backgroundColor: "#EF4444",
+  borderRadius: 8,
+  alignSelf: "flex-end",
+},
+deleteButtonText: {
+  color: "#FFFFFF",
+  fontSize: 12,
+  fontWeight: "600",
+},
 });

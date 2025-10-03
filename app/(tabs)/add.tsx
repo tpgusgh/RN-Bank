@@ -8,6 +8,8 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 import axios from 'axios';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -40,9 +42,12 @@ const handleConfirm = (date: Date) => {
 };
 
 
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
     loadCategories();
-  }, [token]);
+  }, [token])
+);
+
 
 const loadCategories = async () => {
 
@@ -88,17 +93,22 @@ const handleSave = async () => {
   setLoading(true);
 
   try {
-    const year = transactionDate.getFullYear();
-    const month = String(transactionDate.getMonth() + 1).padStart(2, "0");
-    const day = String(transactionDate.getDate()).padStart(2, "0");
+    // timezone 보정 (서버는 UTC로 받음)
+    const fixedDate = new Date(
+      transactionDate.getTime() - transactionDate.getTimezoneOffset() * 60000
+    );
 
-    const formattedDate = `${year}-${month}-${day}`; // 시간대 영향 제거
+    const year = fixedDate.getFullYear();
+    const month = String(fixedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(fixedDate.getDate()).padStart(2, "0");
+
+    const formattedDate = `${year}-${month}-${day}`;
 
     await axios.post(
       'https://api2.mieung.kr/transactions',
       {
         category_id: selectedCategory.id,
-        amount: Number(amount),
+        amount: Number(amount.replace(/,/g, "")), // 콤마 제거
         description: description.trim(),
         transaction_date: formattedDate,
       },
@@ -133,128 +143,180 @@ const handleSave = async () => {
   const incomeCategories = categories.filter((c) => c.type === 'income');
   const expenseCategories = categories.filter((c) => c.type === 'expense');
 
-return(
-<View style={styles.container}>
-  <View style={styles.header}>
-    <Text style={styles.headerTitle}>거래 추가</Text>
-  </View>
 
-  <ScrollView style={styles.content}>
-    <View style={styles.section}>
-      <Text style={styles.label}>카테고리</Text>
-      <TouchableOpacity style={styles.selectButton} onPress={() => setShowCategoryModal(true)}>
-        <View style={styles.selectContent}>
-          {selectedCategory ? (
-            <Text style={styles.selectText}>{selectedCategory.name}</Text>
-          ) : (
-            <Text style={styles.selectPlaceholder}>카테고리 선택</Text>
-          )}
-          <ChevronDown size={20} color="#9CA3AF" />
-        </View>
-      </TouchableOpacity>
+  const handleAmountChange = (value: string) => {
+  // 숫자와 점(.)만 허용
+  const numericValue = value.replace(/[^0-9]/g, "");
+
+  // 콤마 추가
+  const formattedValue = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  setAmount(formattedValue);
+};
+
+
+return (
+  <View style={styles.container}>
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>거래 추가</Text>
     </View>
 
-    <View style={styles.section}>
-      <Text style={styles.label}>금액</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="0"
-        value={amount}
-        onChangeText={setAmount}
-        keyboardType="numeric"
-      />
-    </View>
-
-    <View style={styles.section}>
-      <Text style={styles.label}>내용</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="거래 내용을 입력하세요"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-      />
-    </View>
-
-    <View style={styles.section}>
-  <Text style={styles.label}>날짜</Text>
-  <TouchableOpacity style={styles.dateDisplay} onPress={showDatePicker}>
-    <Calendar size={20} color="#6B7280" />
-    <Text style={styles.dateText}>{formatDate(transactionDate)}</Text>
-  </TouchableOpacity>
-
-  <DateTimePickerModal
-    isVisible={isDatePickerVisible}
-    mode="date"
-    date={transactionDate}
-    onConfirm={handleConfirm}
-    onCancel={hideDatePicker}
-  />
-</View>
-
-    <TouchableOpacity
-      style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-      onPress={handleSave}
-      disabled={loading}
-    >
-      <Text style={styles.saveButtonText}>{loading ? '저장 중...' : '저장'}</Text>
-    </TouchableOpacity>
-  </ScrollView>
-
-  <Modal
-    visible={showCategoryModal}
-    animationType="slide"
-    transparent={true}
-    onRequestClose={() => setShowCategoryModal(false)}
-  >
-    <View style={styles.modalContainer}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>카테고리 선택</Text>
-        <ScrollView style={styles.categoryList}>
-          {incomeCategories.length > 0 && (
-            <>
-              <Text style={styles.categoryGroupTitle}>수익</Text>
-              {incomeCategories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={styles.categoryItem}
-                  onPress={() => {
-                    setSelectedCategory(category);
-                    setShowCategoryModal(false);
-                  }}
-                >
-                  <Text style={styles.categoryName}>{category.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </>
-          )}
-          {expenseCategories.length > 0 && (
-            <>
-              <Text style={styles.categoryGroupTitle}>지출</Text>
-              {expenseCategories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={styles.categoryItem}
-                  onPress={() => {
-                    setSelectedCategory(category);
-                    setShowCategoryModal(false);
-                  }}
-                >
-                  <Text style={styles.categoryName}>{category.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </>
-          )}
-        </ScrollView>
-        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowCategoryModal(false)}>
-          <Text style={styles.modalCloseText}>닫기</Text>
+    <ScrollView style={styles.content}>
+      {/* 카테고리 선택 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>카테고리</Text>
+        <TouchableOpacity
+          style={styles.selectButton}
+          onPress={() => setShowCategoryModal(true)}
+        >
+          <View style={styles.selectContent}>
+            {selectedCategory ? (
+              <>
+                <View
+                  style={[
+                    styles.categoryDot,
+                    { backgroundColor: selectedCategory.color || "#9CA3AF" },
+                  ]}
+                />
+                <Text style={styles.selectText}>{selectedCategory.name}</Text>
+              </>
+            ) : (
+              <Text style={styles.selectPlaceholder}>카테고리 선택</Text>
+            )}
+            <ChevronDown size={20} color="#9CA3AF" />
+          </View>
         </TouchableOpacity>
       </View>
-    </View>
-  </Modal>
-</View>
-)}
+
+      {/* 금액 입력 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>금액</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="0"
+          value={amount}
+          onChangeText={handleAmountChange}
+          keyboardType="numeric"
+        />
+      </View>
+
+      {/* 내용 입력 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>내용</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="거래 내용을 입력하세요"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          numberOfLines={4}
+        />
+      </View>
+
+      {/* 날짜 선택 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>날짜</Text>
+        <TouchableOpacity style={styles.dateDisplay} onPress={showDatePicker}>
+          <Calendar size={20} color="#6B7280" />
+          <Text style={styles.dateText}>{formatDate(transactionDate)}</Text>
+        </TouchableOpacity>
+
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          date={transactionDate}
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+        />
+      </View>
+
+      {/* 저장 버튼 */}
+      <TouchableOpacity
+        style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+        onPress={handleSave}
+        disabled={loading}
+      >
+        <Text style={styles.saveButtonText}>
+          {loading ? "저장 중..." : "저장"}
+        </Text>
+      </TouchableOpacity>
+    </ScrollView>
+
+    {/* 카테고리 선택 모달 */}
+    <Modal
+      visible={showCategoryModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowCategoryModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>카테고리 선택</Text>
+          <ScrollView style={styles.categoryList}>
+            {/* 수익 카테고리 */}
+            {incomeCategories.length > 0 && (
+              <>
+                <Text style={styles.categoryGroupTitle}>수익</Text>
+                {incomeCategories.map((category) => (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={styles.categoryItem}
+                    onPress={() => {
+                      setSelectedCategory(category);
+                      setShowCategoryModal(false);
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.categoryDot,
+                        { backgroundColor: category.color || "#9CA3AF" },
+                      ]}
+                    />
+                    <Text style={styles.categoryName}>{category.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+
+            {/* 지출 카테고리 */}
+            {expenseCategories.length > 0 && (
+              <>
+                <Text style={styles.categoryGroupTitle}>지출</Text>
+                {expenseCategories.map((category) => (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={styles.categoryItem}
+                    onPress={() => {
+                      setSelectedCategory(category);
+                      setShowCategoryModal(false);
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.categoryDot,
+                        { backgroundColor: category.color || "#9CA3AF" },
+                      ]}
+                    />
+                    <Text style={styles.categoryName}>{category.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+          </ScrollView>
+
+          {/* 닫기 버튼 */}
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={() => setShowCategoryModal(false)}
+          >
+            <Text style={styles.modalCloseText}>닫기</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  </View>
+);
+};
 
 
 
@@ -327,10 +389,11 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
+
   dateDisplay: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -396,6 +459,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     gap: 12,
   },
+  
   categoryName: {
     fontSize: 16,
     color: '#1F2937',
