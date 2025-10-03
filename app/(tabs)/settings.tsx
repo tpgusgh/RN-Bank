@@ -1,5 +1,7 @@
 import { Linking } from "react-native";
 import { useState, useEffect } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import {
   View,
   Text,
@@ -337,7 +339,7 @@ useEffect(() => {
                 ))}
               </View>
             </View>
-
+          <SafeAreaView style={styles.modalButtonsContainer}>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
@@ -358,6 +360,7 @@ useEffect(() => {
                 </Text>
               </TouchableOpacity>
             </View>
+            </SafeAreaView>
           </View>
         </View>
       </Modal>
@@ -481,6 +484,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#EF4444',
   },
+  modalButtonsContainer: {
+  paddingBottom: 16, // 안전 영역 + 여백 확보
+  backgroundColor: "#fff",
+},
+
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',

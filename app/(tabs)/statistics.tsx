@@ -111,6 +111,7 @@ export default function StatisticsScreen() {
   }, []);
 
   useEffect(() => {
+
     if (token) {
       loadStatistics();
     }
@@ -162,6 +163,11 @@ const handleDeleteTransaction = (transactionId?: string) => {
 
 useFocusEffect(
   useCallback(() => {
+    const getToken = async () => {
+      const savedToken = await AsyncStorage.getItem("token");
+      setToken(savedToken);
+    };
+    getToken();
     setSelectedType("income");
     loadStatistics();
   }, [token])

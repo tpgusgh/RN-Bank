@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
@@ -122,8 +123,6 @@ const handleSave = async () => {
 
     setAmount('');
     setDescription('');
-    setSelectedCategory(null);
-    setTransactionDate(new Date());
     Alert.alert('성공', '거래가 저장되었습니다');
   } catch (error) {
     console.error('거래 저장 실패:', error);
@@ -244,76 +243,77 @@ return (
 
     {/* 카테고리 선택 모달 */}
     <Modal
-      visible={showCategoryModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowCategoryModal(false)}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>카테고리 선택</Text>
-          <ScrollView style={styles.categoryList}>
-            {/* 수익 카테고리 */}
-            {incomeCategories.length > 0 && (
-              <>
-                <Text style={styles.categoryGroupTitle}>수익</Text>
-                {incomeCategories.map((category) => (
-                  <TouchableOpacity
-                    key={category.id}
-                    style={styles.categoryItem}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      setShowCategoryModal(false);
-                    }}
-                  >
-                    <View
-                      style={[
-                        styles.categoryDot,
-                        { backgroundColor: category.color || "#9CA3AF" },
-                      ]}
-                    />
-                    <Text style={styles.categoryName}>{category.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </>
-            )}
+  visible={showCategoryModal}
+  animationType="slide"
+  transparent={true}
+  onRequestClose={() => setShowCategoryModal(false)}
+>
+  <View style={styles.modalContainer}>
+    <SafeAreaView style={styles.modalContent}> 
+      <Text style={styles.modalTitle}>카테고리 선택</Text>
+      <ScrollView style={styles.categoryList}>
+        {/* 수익 카테고리 */}
+        {incomeCategories.length > 0 && (
+          <>
+            <Text style={styles.categoryGroupTitle}>수익</Text>
+            {incomeCategories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={styles.categoryItem}
+                onPress={() => {
+                  setSelectedCategory(category);
+                  setShowCategoryModal(false);
+                }}
+              >
+                <View
+                  style={[
+                    styles.categoryDot,
+                    { backgroundColor: category.color || "#9CA3AF" },
+                  ]}
+                />
+                <Text style={styles.categoryName}>{category.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
 
-            {/* 지출 카테고리 */}
-            {expenseCategories.length > 0 && (
-              <>
-                <Text style={styles.categoryGroupTitle}>지출</Text>
-                {expenseCategories.map((category) => (
-                  <TouchableOpacity
-                    key={category.id}
-                    style={styles.categoryItem}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      setShowCategoryModal(false);
-                    }}
-                  >
-                    <View
-                      style={[
-                        styles.categoryDot,
-                        { backgroundColor: category.color || "#9CA3AF" },
-                      ]}
-                    />
-                    <Text style={styles.categoryName}>{category.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </>
-            )}
-          </ScrollView>
+        {/* 지출 카테고리 */}
+        {expenseCategories.length > 0 && (
+          <>
+            <Text style={styles.categoryGroupTitle}>지출</Text>
+            {expenseCategories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={styles.categoryItem}
+                onPress={() => {
+                  setSelectedCategory(category);
+                  setShowCategoryModal(false);
+                }}
+              >
+                <View
+                  style={[
+                    styles.categoryDot,
+                    { backgroundColor: category.color || "#9CA3AF" },
+                  ]}
+                />
+                <Text style={styles.categoryName}>{category.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+      </ScrollView>
 
-          {/* 닫기 버튼 */}
-          <TouchableOpacity
-            style={styles.modalCloseButton}
-            onPress={() => setShowCategoryModal(false)}
-          >
-            <Text style={styles.modalCloseText}>닫기</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
+      {/* 닫기 버튼 */}
+      <TouchableOpacity
+        style={styles.modalCloseButton}
+        onPress={() => setShowCategoryModal(false)}
+      >
+        <Text style={styles.modalCloseText}>닫기</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  </View>
+</Modal>
+
   </View>
 );
 };
