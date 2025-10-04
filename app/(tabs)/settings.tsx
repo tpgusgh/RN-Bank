@@ -1,32 +1,270 @@
-import { Linking } from "react-native";
-import { useState, useEffect } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Linking } from 'react-native';
+import { useState, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View,
   Text,
   ScrollView,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Modal,
   Alert,
-} from "react-native";
+} from 'react-native';
 import axios from 'axios';
-import { useRouter } from "expo-router";
-import { useAuth } from "@/app/contexts/AuthContext";
-import { Category } from "@/types/database";
-import { Plus, Trash2, LogOut } from "lucide-react-native";
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { Category } from '@/types/database';
+import { Plus, Trash2, LogOut } from 'lucide-react-native';
+import styled from 'styled-components/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const COLORS = [
-  "#EF4444",
-  "#F59E0B",
-  "#10B981",
-  "#3B82F6",
-  "#8B5CF6",
-  "#EC4899",
-  "#6B7280",
-];
+const COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280'];
+
+const API_URL = 'https://api2.mieung.kr';
+
+// 스타일드 컴포넌트 정의
+const Container = styled(View)`
+  flex: 1;
+  background-color: #f8fafc;
+`;
+
+const Header = styled(View)`
+  background-color: #ffffff;
+  padding-top: 60px;
+  padding-horizontal: 24px;
+  padding-bottom: 24px;
+  border-bottom-width: 1px;
+  border-bottom-color: #e2e8f0;
+`;
+
+const HeaderTitle = styled(Text)`
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+`;
+
+const Content = styled(ScrollView)`
+  flex: 1;
+`;
+
+const Section = styled(View)`
+  background-color: #ffffff;
+  margin: 16px;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const SectionHeader = styled(View)`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const SectionTitle = styled(Text)`
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+`;
+
+const AddButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+`;
+
+const AddButtonText = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+`;
+
+const CategoryGroupTitle = styled(Text)`
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 12px;
+  margin-bottom: 8px;
+`;
+
+const CategoryItem = styled(View)`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-vertical: 12px;
+  border-bottom-width: 1px;
+  border-bottom-color: #f3f4f6;
+`;
+
+const CategoryInfo = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+`;
+
+const CategoryDot = styled(View)`
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+`;
+
+const CategoryName = styled(Text)`
+  font-size: 16px;
+  color: #1e293b;
+`;
+
+const AccountInfo = styled(View)`
+  padding-vertical: 12px;
+`;
+
+const AccountLabel = styled(Text)`
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 4px;
+`;
+
+const AccountValue = styled(Text)`
+  font-size: 16px;
+  color: #1e293b;
+`;
+
+const ContactButton = styled(TouchableOpacity)`
+  border-radius: 8px;
+  margin: 16px 0;
+`;
+
+const ContactButtonText = styled(Text)`
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 16px;
+`;
+
+const LogoutButton = styled(TouchableOpacity)`
+  margin: 16px;
+  margin-top: 0;
+  border-radius: 12px;
+`;
+
+const LogoutText = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+`;
+
+const ModalContainer = styled(View)`
+  flex: 1;
+  justify-content: flex-end;
+  background-color: rgba(0, 0, 0, 0.5);
+`;
+
+const ModalContent = styled(View)`
+  background-color: #ffffff;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px;
+`;
+
+const ModalTitle = styled(Text)`
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 20px;
+`;
+
+const ModalSection = styled(View)`
+  margin-bottom: 20px;
+`;
+
+const ModalLabel = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+`;
+
+const ModalInput = styled(TextInput)`
+  background-color: #f3f4f6;
+  border-radius: 12px;
+  padding-horizontal: 16px;
+  padding-vertical: 14px;
+  font-size: 16px;
+  border: 1px solid #e2e8f0;
+`;
+
+const TypeSelector = styled(View)`
+  flex-direction: row;
+  gap: 12px;
+`;
+
+const TypeButton = styled(TouchableOpacity)`
+  flex: 1;
+  padding-vertical: 12px;
+  border-radius: 12px;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const TypeButtonActive = styled(TypeButton)`
+  border: 1px solid #2563eb;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const TypeButtonText = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+`;
+
+const ColorSelector = styled(View)`
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const ColorOption = styled(TouchableOpacity)`
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+`;
+
+const ColorOptionActive = styled(ColorOption)`
+  border: 3px solid #1e293b;
+`;
+
+const ModalButtonsContainer = styled(SafeAreaView)`
+  padding-bottom: 16px;
+  background-color: #ffffff;
+`;
+
+const ModalButtons = styled(View)`
+  flex-direction: row;
+  gap: 12px;
+  margin-top: 8px;
+`;
+
+const ModalCancelButton = styled(TouchableOpacity)`
+  flex: 1;
+  border-radius: 12px;
+`;
+
+const ModalCancelText = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+`;
+
+const ModalSaveButton = styled(TouchableOpacity)`
+  flex: 1;
+  border-radius: 12px;
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
+`;
+
+const ModalSaveText = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+`;
 
 export default function SettingsScreen() {
   const { token, user, signOut, email } = useAuth();
@@ -34,58 +272,48 @@ export default function SettingsScreen() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryType, setNewCategoryType] = useState<"income" | "expense">(
-    "expense"
-  );
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryType, setNewCategoryType] = useState<'income' | 'expense'>('expense');
   const [newCategoryColor, setNewCategoryColor] = useState(COLORS[0]);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = "https://api2.mieung.kr";
-
   useEffect(() => {
-    
     if (token) loadCategories();
   }, [token]);
 
   const loadCategories = async () => {
     try {
-      const startDate = new Date().toISOString().split("T")[0];
-      const endDate = new Date().toISOString().split("T")[0];
+      const startDate = new Date().toISOString().split('T')[0];
+      const endDate = new Date().toISOString().split('T')[0];
 
       const [expenseRes, incomeRes] = await Promise.all([
-        axios.get(
-          `${API_URL}/categories?type=expense&startDate=${startDate}&endDate=${endDate}`,
-           {headers: { Authorization: `Bearer ${token}` },}
-          ),
-        axios.get(
-          `${API_URL}/categories?type=income&startDate=${startDate}&endDate=${endDate}`,
-           {headers: { Authorization: `Bearer ${token}` },}),
+        axios.get(`${API_URL}/categories?type=expense&startDate=${startDate}&endDate=${endDate}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/categories?type=income&startDate=${startDate}&endDate=${endDate}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
-
-
-
-
 
       setCategories([...expenseRes.data.categories, ...incomeRes.data.categories]);
     } catch (error) {
       console.error(error);
-      Alert.alert("오류", "카테고리 불러오기에 실패했습니다.");
+      Alert.alert('오류', '카테고리 불러오기에 실패했습니다.');
     }
   };
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
-      Alert.alert("오류", "카테고리 이름을 입력해주세요");
+      Alert.alert('오류', '카테고리 이름을 입력해주세요');
       return;
     }
 
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/categories/`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -97,513 +325,286 @@ export default function SettingsScreen() {
 
       if (!res.ok) {
         const errMsg = await res.text();
-        throw new Error(errMsg || "카테고리 추가 실패");
+        throw new Error(errMsg || '카테고리 추가 실패');
       }
 
-      setNewCategoryName("");
-      setNewCategoryType("expense");
+      setNewCategoryName('');
+      setNewCategoryType('expense');
       setNewCategoryColor(COLORS[0]);
       setShowAddModal(false);
 
       await loadCategories();
-      Alert.alert("성공", "카테고리가 추가되었습니다.");
+      Alert.alert('성공', '카테고리가 추가되었습니다.');
     } catch (error) {
       console.error(error);
-      Alert.alert("오류", (error as Error).message || "카테고리 추가 실패");
+      Alert.alert('오류', (error as Error).message || '카테고리 추가 실패');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    Alert.alert(
-      "카테고리 삭제",
-      "이 카테고리를 삭제하시겠습니까? 관련 거래의 카테고리가 제거됩니다.",
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "삭제",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const res = await fetch(`${API_URL}/categories/${categoryId}/`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              if (!res.ok) throw new Error("삭제 실패");
-              setCategories(categories.filter((c) => c.id !== categoryId));
-              Alert.alert("성공", "카테고리가 삭제되었습니다.");
-            } catch (error) {
-              console.error(error);
-              Alert.alert("오류", "카테고리 삭제 실패");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleLogout = () => {
-    Alert.alert("로그아웃", "로그아웃 하시겠습니까?", [
-      { text: "취소", style: "cancel" },
+    Alert.alert('카테고리 삭제', '이 카테고리를 삭제하시겠습니까? 관련 거래의 카테고리가 제거됩니다.', [
+      { text: '취소', style: 'cancel' },
       {
-        text: "로그아웃",
-        style: "destructive",
+        text: '삭제',
+        style: 'destructive',
         onPress: async () => {
-          await signOut();
-          router.replace("/(auth)/login");
+          try {
+            const res = await fetch(`${API_URL}/categories/${categoryId}/`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error('삭제 실패');
+            setCategories(categories.filter((c) => c.id !== categoryId));
+            Alert.alert('성공', '카테고리가 삭제되었습니다.');
+          } catch (error) {
+            console.error(error);
+            Alert.alert('오류', '카테고리 삭제 실패');
+          }
         },
       },
     ]);
   };
-const incomeCategories = categories.filter(c => c.type === "income");
-const expenseCategories = categories.filter(c => c.type === "expense");
 
-
-useEffect(() => {
-  if (categories.length > 0) {
-    const incomeCategories = categories.filter(c => c.type === "income");
-    const expenseCategories = categories.filter(c => c.type === "expense");
-
-  }
-}, [categories]);
-
-  const handleContact = () => {
-    Linking.openURL("mailto:me@mieung.kr");
+  const handleLogout = () => {
+    Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '로그아웃',
+        style: 'destructive',
+        onPress: async () => {
+          await signOut();
+          router.replace('/(auth)/login');
+        },
+      },
+    ]);
   };
 
+  const handleContact = () => {
+    Linking.openURL('mailto:me@mieung.kr');
+  };
 
-
+  const incomeCategories = categories.filter((c) => c.type === 'income');
+  const expenseCategories = categories.filter((c) => c.type === 'expense');
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>설정</Text>
-      </View>
+    <Container>
+      <Header>
+        <HeaderTitle>설정</HeaderTitle>
+      </Header>
 
-      <ScrollView style={styles.content}>
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>카테고리 관리</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setShowAddModal(true)}
-            >
-              <Plus size={20} color="#3B82F6" />
-              <Text style={styles.addButtonText}>추가</Text>
-            </TouchableOpacity>
-          </View>
+      <Content>
+        <Section>
+          <SectionHeader>
+            <SectionTitle>카테고리 관리</SectionTitle>
+            <AddButton onPress={() => setShowAddModal(true)}>
+              <LinearGradient
+                colors={['#2563eb', '#1e40af']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  borderRadius: 12,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Plus size={20} color="#ffffff" />
+                <AddButtonText>추가</AddButtonText>
+              </LinearGradient>
+            </AddButton>
+          </SectionHeader>
 
           {incomeCategories.length > 0 && (
             <>
-              <Text style={styles.categoryGroupTitle}>수익</Text>
+              <CategoryGroupTitle>수익</CategoryGroupTitle>
               {incomeCategories.map((category) => (
-                <View key={category.id} style={styles.categoryItem}>
-                  <View style={styles.categoryInfo}>
-                    <View
-                      style={[
-                        styles.categoryDot,
-                        { backgroundColor: category.color },
-                      ]}
-                    />
-                    <Text style={styles.categoryName}>{category.name}</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteCategory(category.id)}
-                  >
-                    <Trash2 size={20} color="#EF4444" />
+                <CategoryItem key={category.id}>
+                  <CategoryInfo>
+                    <CategoryDot style={{ backgroundColor: category.color }} />
+                    <CategoryName>{category.name}</CategoryName>
+                  </CategoryInfo>
+                  <TouchableOpacity onPress={() => handleDeleteCategory(category.id)}>
+                    <Trash2 size={20} color="#ef4444" />
                   </TouchableOpacity>
-                </View>
+                </CategoryItem>
               ))}
             </>
           )}
 
           {expenseCategories.length > 0 && (
             <>
-              <Text style={styles.categoryGroupTitle}>지출</Text>
+              <CategoryGroupTitle>지출</CategoryGroupTitle>
               {expenseCategories.map((category) => (
-                <View key={category.id} style={styles.categoryItem}>
-                  <View style={styles.categoryInfo}>
-                    <View
-                      style={[
-                        styles.categoryDot,
-                        { backgroundColor: category.color },
-                      ]}
-                    />
-                    <Text style={styles.categoryName}>{category.name}</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteCategory(category.id)}
-                  >
-                    <Trash2 size={20} color="#EF4444" />
+                <CategoryItem key={category.id}>
+                  <CategoryInfo>
+                    <CategoryDot style={{ backgroundColor: category.color }} />
+                    <CategoryName>{category.name}</CategoryName>
+                  </CategoryInfo>
+                  <TouchableOpacity onPress={() => handleDeleteCategory(category.id)}>
+                    <Trash2 size={20} color="#ef4444" />
                   </TouchableOpacity>
-                </View>
+                </CategoryItem>
               ))}
             </>
           )}
-        </View>
+        </Section>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정</Text>
-          
-          <View style={styles.accountInfo}>
-            <Text style={styles.accountLabel}>이메일</Text>
-            <Text style={styles.accountValue}>{email}</Text>
-            <View style={styles.accountInfo}>
-            <Text style={styles.accountLabel}>문의</Text>
-            <TouchableOpacity style={styles.button} onPress={handleContact}>
-            <Text style={styles.buttonText}>me@mieung.kr</Text>
-            </TouchableOpacity>
-  </View>
-          </View>
-        </View>
+        <Section>
+          <SectionTitle>계정</SectionTitle>
+          <AccountInfo>
+            <AccountLabel>이메일</AccountLabel>
+            <AccountValue>{email}</AccountValue>
+          </AccountInfo>
+          <AccountInfo>
+            <AccountLabel>문의</AccountLabel>
+            <ContactButton onPress={handleContact}>
+              <LinearGradient
+                colors={['#2563eb', '#1e40af']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  borderRadius: 8,
+                  padding: 12,
+                  alignItems: 'center',
+                }}
+              >
+                <ContactButtonText>me@mieung.kr</ContactButtonText>
+              </LinearGradient>
+            </ContactButton>
+          </AccountInfo>
+        </Section>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>로그아웃</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        <LogoutButton onPress={handleLogout}>
+          <LinearGradient
+            colors={['#ef4444', '#b91c1c']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 12,
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            <LogOut size={20} color="#ffffff" />
+            <LogoutText>로그아웃</LogoutText>
+          </LinearGradient>
+        </LogoutButton>
+      </Content>
 
-      <Modal
-        visible={showAddModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowAddModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>카테고리 추가</Text>
+      <Modal visible={showAddModal} animationType="slide" transparent={true} onRequestClose={() => setShowAddModal(false)}>
+        <ModalContainer>
+          <ModalContent>
+            <ModalTitle>카테고리 추가</ModalTitle>
 
-            <View style={styles.modalSection}>
-              <Text style={styles.modalLabel}>이름</Text>
-              <TextInput
-                style={styles.modalInput}
+            <ModalSection>
+              <ModalLabel>이름</ModalLabel>
+              <ModalInput
                 placeholder="카테고리 이름"
                 value={newCategoryName}
                 onChangeText={setNewCategoryName}
               />
-            </View>
+            </ModalSection>
 
-            <View style={styles.modalSection}>
-              <Text style={styles.modalLabel}>유형</Text>
-              <View style={styles.typeSelector}>
-                <TouchableOpacity
-                  style={[
-                    styles.typeButton,
-                    newCategoryType === 'income' && styles.typeButtonActive,
-                  ]}
+            <ModalSection>
+              <ModalLabel>유형</ModalLabel>
+              <TypeSelector>
+                <TypeButton
+                  as={newCategoryType === 'income' ? TypeButtonActive : TypeButton}
                   onPress={() => setNewCategoryType('income')}
                 >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      newCategoryType === 'income' && styles.typeButtonTextActive,
-                    ]}
+                  <LinearGradient
+                    colors={newCategoryType === 'income' ? ['#10b981', '#059669'] : ['#e2e8f0', '#cbd5e1']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      borderRadius: 12,
+                      paddingVertical: 12,
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
                   >
-                    수익
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.typeButton,
-                    newCategoryType === 'expense' && styles.typeButtonActive,
-                  ]}
+                    <TypeButtonText>수익</TypeButtonText>
+                  </LinearGradient>
+                </TypeButton>
+                <TypeButton
+                  as={newCategoryType === 'expense' ? TypeButtonActive : TypeButton}
                   onPress={() => setNewCategoryType('expense')}
                 >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      newCategoryType === 'expense' &&
-                        styles.typeButtonTextActive,
-                    ]}
+                  <LinearGradient
+                    colors={newCategoryType === 'expense' ? ['#dc2626', '#b91c1c'] : ['#e2e8f0', '#cbd5e1']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      borderRadius: 12,
+                      paddingVertical: 12,
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
                   >
-                    지출
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-                
-            <View style={styles.modalSection}>
-              <Text style={styles.modalLabel}>색상</Text>
-              <View style={styles.colorSelector}>
+                    <TypeButtonText>지출</TypeButtonText>
+                  </LinearGradient>
+                </TypeButton>
+              </TypeSelector>
+            </ModalSection>
+
+            <ModalSection>
+              <ModalLabel>색상</ModalLabel>
+              <ColorSelector>
                 {COLORS.map((color) => (
-                  <TouchableOpacity
+                  <ColorOption
                     key={color}
-                    style={[
-                      styles.colorOption,
-                      { backgroundColor: color },
-                      newCategoryColor === color && styles.colorOptionActive,
-                    ]}
+                    style={{ backgroundColor: color }}
+                    as={newCategoryColor === color ? ColorOptionActive : ColorOption}
                     onPress={() => setNewCategoryColor(color)}
                   />
                 ))}
-              </View>
-            </View>
-          <SafeAreaView style={styles.modalButtonsContainer}>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setShowAddModal(false)}
-              >
-                <Text style={styles.modalCancelText}>취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalSaveButton,
-                  loading && styles.modalSaveButtonDisabled,
-                ]}
-                onPress={handleAddCategory}
-                disabled={loading}
-              >
-                <Text style={styles.modalSaveText}>
-                  {loading ? '추가 중...' : '추가'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            </SafeAreaView>
-          </View>
-        </View>
+              </ColorSelector>
+            </ModalSection>
+
+            <ModalButtonsContainer>
+              <ModalButtons>
+                <ModalCancelButton onPress={() => setShowAddModal(false)}>
+                  <LinearGradient
+                    colors={['#6b7280', '#4b5563']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      borderRadius: 12,
+                      paddingVertical: 14,
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
+                  >
+                    <ModalCancelText>취소</ModalCancelText>
+                  </LinearGradient>
+                </ModalCancelButton>
+                <ModalSaveButton onPress={handleAddCategory} disabled={loading}>
+                  <LinearGradient
+                    colors={loading ? ['#93c5fd', '#60a5fa'] : ['#2563eb', '#1e40af']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      borderRadius: 12,
+                      paddingVertical: 14,
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
+                  >
+                    <ModalSaveText>{loading ? '추가 중...' : '추가'}</ModalSaveText>
+                  </LinearGradient>
+                </ModalSaveButton>
+              </ModalButtons>
+            </ModalButtonsContainer>
+          </ModalContent>
+        </ModalContainer>
       </Modal>
-    </View>
+    </Container>
   );
 }
-
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  content: {
-    flex: 1,
-  },
-  section: {
-    backgroundColor: '#FFFFFF',
-    margin: 16,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3B82F6',
-  },
-  categoryGroupTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  categoryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  categoryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  categoryName: {
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  accountInfo: {
-    paddingVertical: 12,
-  },
-  accountLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  accountValue: {
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    margin: 16,
-    marginTop: 0,
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#EF4444',
-  },
-  modalButtonsContainer: {
-  paddingBottom: 16, // 안전 영역 + 여백 확보
-  backgroundColor: "#fff",
-},
-
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 20,
-  },
-  modalSection: {
-    marginBottom: 20,
-  },
-  modalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  modalInput: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  typeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  typeButtonActive: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  typeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  typeButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  colorSelector: {
-    flexDirection: 'row',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  colorOptionActive: {
-    borderWidth: 3,
-    borderColor: '#1F2937',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  modalCancelButton: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  modalSaveButton: {
-    flex: 1,
-    backgroundColor: '#3B82F6',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  modalSaveButtonDisabled: {
-    backgroundColor: '#93C5FD',
-  },
-  modalSaveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-    button: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    margin: 16,
-  },
-  buttonText: {
-    color: "#0a1eff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-});

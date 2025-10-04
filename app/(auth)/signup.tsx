@@ -1,15 +1,91 @@
 import { useState } from 'react';
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Text,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/app/contexts/AuthContext';
+import styled from 'styled-components/native';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// 스타일드 컴포넌트 정의
+const Container = styled(KeyboardAvoidingView).attrs({
+  behavior: Platform.OS === 'ios' ? 'padding' : 'height',
+})`
+  flex: 1;
+  background-color: #f8fafc;
+`;
+
+const Content = styled(View)`
+  flex: 1;
+  justify-content: center;
+  padding-horizontal: 24px;
+`;
+
+const Title = styled(Text)`
+  font-size: 34px;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: center;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+`;
+
+const Subtitle = styled(Text)`
+  font-size: 16px;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 32px;
+  font-weight: 400;
+`;
+
+const ErrorText = styled(Text)`
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+  font-weight: 500;
+`;
+
+const Input = styled(TextInput)`
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const SignupButton = styled(TouchableOpacity)`
+  border-radius: 12px;
+  padding-vertical: 16px;
+  align-items: center;
+  margin-top: 8px;
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
+`;
+
+const ButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+const LinkButton = styled(TouchableOpacity)`
+  margin-top: 20px;
+  align-items: center;
+`;
+
+const LinkText = styled(Text)`
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+`;
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -44,23 +120,19 @@ export default function SignupScreen() {
     if (error) {
       setError('회원가입에 실패했습니다. 다시 시도해주세요.');
     } else {
-      router.replace('/(auth)/login'); // 회원가입 성공 후 로그인 화면으로 이동
+      router.replace('/(auth)/login');
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View style={styles.content}>
-        <Text style={styles.title}>회원가입</Text>
-        <Text style={styles.subtitle}>새로운 계정을 만드세요</Text>
+    <Container>
+      <Content>
+        <Title>회원가입</Title>
+        <Subtitle>새로운 계정을 만드세요</Subtitle>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? <ErrorText>{error}</ErrorText> : null}
 
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="이메일"
           value={email}
           onChangeText={setEmail}
@@ -69,8 +141,7 @@ export default function SignupScreen() {
           editable={!loading}
         />
 
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="비밀번호 (최소 6자)"
           value={password}
           onChangeText={setPassword}
@@ -78,8 +149,7 @@ export default function SignupScreen() {
           editable={!loading}
         />
 
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="비밀번호 확인"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
@@ -87,88 +157,26 @@ export default function SignupScreen() {
           editable={!loading}
         />
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? '회원가입 중...' : '회원가입'}
-          </Text>
-        </TouchableOpacity>
+        <SignupButton onPress={handleSignup} disabled={loading}>
+          <LinearGradient
+            colors={loading ? ['#93c5fd', '#60a5fa'] : ['#2563eb', '#1e40af']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 12,
+              paddingVertical: 16,
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <ButtonText>{loading ? '회원가입 중...' : '회원가입'}</ButtonText>
+          </LinearGradient>
+        </SignupButton>
 
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => router.back()}
-          disabled={loading}
-        >
-          <Text style={styles.linkText}>이미 계정이 있으신가요? 로그인</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+        <LinkButton onPress={() => router.back()} disabled={loading}>
+          <LinkText>이미 계정이 있으신가요? 로그인</LinkText>
+        </LinkButton>
+      </Content>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  button: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    backgroundColor: '#93C5FD',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkButton: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#3B82F6',
-    fontSize: 14,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-});

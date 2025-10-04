@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   RefreshControl,
   Alert,
@@ -12,9 +11,11 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category } from '@/types/database';
 import { useFocusEffect } from 'expo-router';
+import styled from 'styled-components/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface CategoryStats {
-  transactionId?: string; 
+  transactionId?: string;
   category?: Category | null;
   total: number;
   count: number;
@@ -23,7 +24,218 @@ interface CategoryStats {
   date?: string;
 }
 
-const API_BASE_URL = "https://api2.mieung.kr";
+const API_BASE_URL = 'https://api2.mieung.kr';
+
+// 스타일드 컴포넌트 정의
+const Container = styled(View)`
+  flex: 1;
+  background-color: #f8fafc;
+`;
+
+const Header = styled(View)`
+  background-color: #ffffff;
+  padding-top: 60px;
+  padding-horizontal: 24px;
+  padding-bottom: 24px;
+  border-bottom-width: 1px;
+  border-bottom-color: #e2e8f0;
+`;
+
+const HeaderTitle = styled(Text)`
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+`;
+
+const MonthSelector = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+`;
+
+const MonthButton = styled(TouchableOpacity)`
+  padding-horizontal: 10px;
+`;
+
+const MonthButtonText = styled(Text)`
+  font-size: 20px;
+  font-weight: 700;
+  color: #2563eb;
+`;
+
+const HeaderSubtitle = styled(Text)`
+  font-size: 18px;
+  color: #64748b;
+  font-weight: 600;
+`;
+
+const TypeSelector = styled(View)`
+  flex-direction: row;
+  padding: 16px;
+  gap: 12px;
+`;
+
+const TypeButton = styled(TouchableOpacity)`
+  flex: 1;
+  padding-vertical: 12px;
+  border-radius: 12px;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const TypeButtonActive = styled(TypeButton)`
+  border: 1px solid #2563eb;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const TypeButtonText = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+`;
+
+const Content = styled(ScrollView)`
+  flex: 1;
+`;
+
+const TotalCard = styled(View)`
+  background-color: #ffffff;
+  margin: 16px;
+  margin-top: 0;
+  padding: 24px;
+  border-radius: 16px;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const TotalLabel = styled(Text)`
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 8px;
+`;
+
+const TotalAmount = styled(Text)`
+  font-size: 32px;
+  font-weight: 700;
+`;
+
+const IncomeText = styled(TotalAmount)`
+  color: #10b981;
+`;
+
+const ExpenseText = styled(TotalAmount)`
+  color: #dc2626;
+`;
+
+const StatsContainer = styled(View)`
+  padding: 16px;
+  padding-top: 0;
+  gap: 12px;
+`;
+
+const StatCard = styled(View)`
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const StatHeader = styled(View)`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const CategoryInfo = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+const CategoryDot = styled(View)`
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+`;
+
+const CategoryName = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+`;
+
+const StatCount = styled(Text)`
+  font-size: 14px;
+  color: #64748b;
+`;
+
+const StatDescription = styled(Text)`
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 8px;
+`;
+
+const StatDate = styled(Text)`
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+`;
+
+const ProgressBar = styled(View)`
+  height: 8px;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+`;
+
+const ProgressFill = styled(View)`
+  height: 100%;
+  border-radius: 4px;
+`;
+
+const StatFooter = styled(View)`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const StatAmount = styled(Text)`
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+`;
+
+const StatPercentage = styled(Text)`
+  font-size: 16px;
+  font-weight: 600;
+  color: #64748b;
+`;
+
+const EmptyContainer = styled(View)`
+  padding: 40px;
+  align-items: center;
+`;
+
+const EmptyText = styled(Text)`
+  font-size: 14px;
+  color: #9ca3af;
+`;
+
+const DeleteButton = styled(TouchableOpacity)`
+  border-radius: 8px;
+  align-self: flex-end;
+`;
+
+const DeleteButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+`;
 
 export default function StatisticsScreen() {
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
@@ -36,8 +248,8 @@ export default function StatisticsScreen() {
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
 
@@ -47,7 +259,7 @@ export default function StatisticsScreen() {
 
   const loadStatistics = async () => {
     if (!token) {
-      console.error("토큰이 없습니다.");
+      console.error('토큰이 없습니다.');
       setLoading(false);
       return;
     }
@@ -65,9 +277,9 @@ export default function StatisticsScreen() {
         `${API_BASE_URL}/statistics/?type=${selectedType}&startDate=${startOfMonthStr}&endDate=${endOfMonthStr}`,
         {
           headers: {
-            "Authorization": `Bearer ${token.trim()}`,
-            "Content-Type": "application/json"
-          }
+            Authorization: `Bearer ${token.trim()}`,
+            'Content-Type': 'application/json',
+          },
         }
       );
 
@@ -87,15 +299,14 @@ export default function StatisticsScreen() {
         total: stat.total,
         count: stat.count,
         percentage: stat.percentage,
-        descriptions: stat.descriptions || "", 
-        date: stat.date || null,  
+        descriptions: stat.descriptions || '',
+        date: stat.date || null,
       }));
 
       setCategoryStats(transformedStats);
       setTotalAmount(data.totalAmount || 0);
-
     } catch (error) {
-      console.error("통계 로드 실패:", error);
+      console.error('통계 로드 실패:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -104,14 +315,13 @@ export default function StatisticsScreen() {
 
   useEffect(() => {
     const getToken = async () => {
-      const savedToken = await AsyncStorage.getItem("token");
+      const savedToken = await AsyncStorage.getItem('token');
       setToken(savedToken);
     };
     getToken();
   }, []);
 
   useEffect(() => {
-
     if (token) {
       loadStatistics();
     }
@@ -125,264 +335,175 @@ export default function StatisticsScreen() {
   const formatCurrency = (amount: number) => {
     return `₩${amount.toLocaleString('ko-KR')}`;
   };
-const handleDeleteTransaction = (transactionId?: string) => {
-  if (!transactionId) return;
 
-  Alert.alert(
-    "삭제 확인",
-    "정말 이 거래를 삭제하시겠습니까?",
-    [
-      { text: "취소", style: "cancel" },
+  const handleDeleteTransaction = (transactionId?: string) => {
+    if (!transactionId) return;
+
+    Alert.alert('삭제 확인', '정말 이 거래를 삭제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
       {
-        text: "삭제",
-        style: "destructive",
+        text: '삭제',
+        style: 'destructive',
         onPress: async () => {
           try {
             const res = await fetch(`${API_BASE_URL}/statistics/transaction/${transactionId}`, {
-              method: "DELETE",
+              method: 'DELETE',
               headers: {
-                "Authorization": `Bearer ${token?.trim()}`,
-                "Content-Type": "application/json",
+                Authorization: `Bearer ${token?.trim()}`,
+                'Content-Type': 'application/json',
               },
             });
 
             if (!res.ok) throw new Error(`삭제 실패: ${res.status}`);
 
-            setCategoryStats(prev =>
-              prev.filter(stat => stat.transactionId !== transactionId)
-            );
+            setCategoryStats((prev) => prev.filter((stat) => stat.transactionId !== transactionId));
           } catch (error) {
-            console.error("삭제 오류:", error);
-            Alert.alert("오류", "삭제에 실패했습니다.");
+            console.error('삭제 오류:', error);
+            Alert.alert('오류', '삭제에 실패했습니다.');
           }
-        }
-      }
-    ]
-  );
-};
+        },
+      },
+    ]);
+  };
 
-useFocusEffect(
-  useCallback(() => {
-    const getToken = async () => {
-      const savedToken = await AsyncStorage.getItem("token");
-      setToken(savedToken);
-    };
-    getToken();
-    setSelectedType("income");
-    loadStatistics();
-  }, [token])
-);
+  useFocusEffect(
+    useCallback(() => {
+      const getToken = async () => {
+        const savedToken = await AsyncStorage.getItem('token');
+        setToken(savedToken);
+      };
+      getToken();
+      setSelectedType('income');
+      loadStatistics();
+    }, [token])
+  );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>카테고리별 통계</Text>
-        <View style={styles.monthSelector}>
-          <TouchableOpacity
-            style={styles.monthButton}
+    <Container>
+      <Header>
+        <HeaderTitle>카테고리별 통계</HeaderTitle>
+        <MonthSelector>
+          <MonthButton
             onPress={() =>
-              setSelectedMonth(
-                new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1)
-              )
+              setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))
             }
           >
-            <Text style={styles.monthButtonText}>◀</Text>
-          </TouchableOpacity>
-
-          <Text style={[styles.headerSubtitle, { fontSize: 18 }]}>
-            {formatMonth(selectedMonth)}
-          </Text>
-
-          <TouchableOpacity
-            style={styles.monthButton}
+            <MonthButtonText>◀</MonthButtonText>
+          </MonthButton>
+          <HeaderSubtitle>{formatMonth(selectedMonth)}</HeaderSubtitle>
+          <MonthButton
             onPress={() =>
-              setSelectedMonth(
-                new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1)
-              )
+              setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))
             }
           >
-            <Text style={styles.monthButtonText}>▶</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <MonthButtonText>▶</MonthButtonText>
+          </MonthButton>
+        </MonthSelector>
+      </Header>
 
-      <View style={styles.typeSelector}>
-        <TouchableOpacity
-          style={[
-            styles.typeButton,
-            selectedType === "income" && styles.typeButtonActive,
-          ]}
-          onPress={() => setSelectedType("income")}
+      <TypeSelector>
+        <TypeButton
+          as={selectedType === 'income' ? TypeButtonActive : TypeButton}
+          onPress={() => setSelectedType('income')}
         >
-          <Text
-            style={[
-              styles.typeButtonText,
-              selectedType === "income" && styles.typeButtonTextActive,
-            ]}
+          <LinearGradient
+            colors={selectedType === 'income' ? ['#10b981', '#059669'] : ['#e2e8f0', '#cbd5e1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 12,
+              paddingVertical: 12,
+              alignItems: 'center',
+              width: '100%',
+            }}
           >
-            수익
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.typeButton,
-            selectedType === "expense" && styles.typeButtonActive,
-          ]}
-          onPress={() => setSelectedType("expense")}
+            <TypeButtonText>수익</TypeButtonText>
+          </LinearGradient>
+        </TypeButton>
+        <TypeButton
+          as={selectedType === 'expense' ? TypeButtonActive : TypeButton}
+          onPress={() => setSelectedType('expense')}
         >
-          <Text
-            style={[
-              styles.typeButtonText,
-              selectedType === "expense" && styles.typeButtonTextActive,
-            ]}
+          <LinearGradient
+            colors={selectedType === 'expense' ? ['#dc2626', '#b91c1c'] : ['#e2e8f0', '#cbd5e1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 12,
+              paddingVertical: 12,
+              alignItems: 'center',
+              width: '100%',
+            }}
           >
-            지출
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <TypeButtonText>지출</TypeButtonText>
+          </LinearGradient>
+        </TypeButton>
+      </TypeSelector>
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.totalCard}>
-          <Text style={styles.totalLabel}>
-            총 {selectedType === "income" ? "수익" : "지출"}
-          </Text>
-          <Text
-            style={[
-              styles.totalAmount,
-              selectedType === "income"
-                ? styles.incomeText
-                : styles.expenseText,
-            ]}
-          >
+      <Content refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <TotalCard>
+          <TotalLabel>총 {selectedType === 'income' ? '수익' : '지출'}</TotalLabel>
+          <TotalAmount as={selectedType === 'income' ? IncomeText : ExpenseText}>
             {formatCurrency(totalAmount)}
-          </Text>
-        </View>
+          </TotalAmount>
+        </TotalCard>
 
         {loading ? (
-          <Text style={{ textAlign: "center", marginTop: 20 }}>
-            로딩 중...
-          </Text>
+          <Text style={{ textAlign: 'center', marginTop: 20, color: '#64748b' }}>로딩 중...</Text>
         ) : categoryStats.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>거래 내역이 없습니다</Text>
-          </View>
+          <EmptyContainer>
+            <EmptyText>거래 내역이 없습니다</EmptyText>
+          </EmptyContainer>
         ) : (
-          <View style={styles.statsContainer}>
+          <StatsContainer>
             {categoryStats.map((stat, index) => (
-              <View
-                key={`${stat.category?.id ?? "unknown"}-${index}`}
-                style={styles.statCard}
-              >
-                <View style={styles.statHeader}>
-                  <View style={styles.categoryInfo}>
-                    <View
-                      style={[
-                        styles.categoryDot,
-                        { backgroundColor: stat.category?.color ?? "#000" },
-                      ]}
-                    />
-                    <Text style={styles.categoryName}>
-                      {stat.category?.name ?? "알 수 없음"}
-                    </Text>
-                  </View>
-                  <Text style={styles.statCount}>{stat.count}건</Text>
-                </View>
+              <StatCard key={`${stat.category?.id ?? 'unknown'}-${index}`}>
+                <StatHeader>
+                  <CategoryInfo>
+                    <CategoryDot style={{ backgroundColor: stat.category?.color ?? '#000' }} />
+                    <CategoryName>{stat.category?.name ?? '알 수 없음'}</CategoryName>
+                  </CategoryInfo>
+                  <StatCount>{stat.count}건</StatCount>
+                </StatHeader>
 
-                {stat.descriptions ? (
-                  <Text style={styles.statDescription}>
-                    {stat.descriptions}
-                  </Text>
-                ) : null}
+                {stat.descriptions ? <StatDescription>{stat.descriptions}</StatDescription> : null}
 
-                {stat.date && (
-                  <Text style={styles.statDate}>{stat.date}</Text>
-                )}
+                {stat.date && <StatDate>{stat.date}</StatDate>}
 
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${Math.max(stat.percentage, 1).toFixed(1)}%`,
-                        backgroundColor: stat.category?.color ?? "#000",
-                      },
-                    ]}
+                <ProgressBar>
+                  <ProgressFill
+                    style={{
+                      width: `${Math.max(stat.percentage, 1).toFixed(1)}%`,
+                      backgroundColor: stat.category?.color ?? '#000',
+                    }}
                   />
-                </View>
+                </ProgressBar>
 
-                <View style={styles.statFooter}>
-                  <Text style={styles.statAmount}>
-                    {formatCurrency(stat.total)}
-                  </Text>
-                  <Text style={styles.statPercentage}>
-                    {stat.percentage.toFixed(1)}%
-                  </Text>
-                </View>
+                <StatFooter>
+                  <StatAmount>{formatCurrency(stat.total)}</StatAmount>
+                  <StatPercentage>{stat.percentage.toFixed(1)}%</StatPercentage>
+                </StatFooter>
 
-                {/* 삭제 버튼 */}
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteTransaction(stat.transactionId)}
-                >
-                  <Text style={styles.deleteButtonText}>삭제</Text>
-                </TouchableOpacity>
-              </View>
+                <DeleteButton onPress={() => handleDeleteTransaction(stat.transactionId)}>
+                  <LinearGradient
+                    colors={['#ef4444', '#b91c1c']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      borderRadius: 8,
+                      padding: 6,
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
+                  >
+                    <DeleteButtonText>삭제</DeleteButtonText>
+                  </LinearGradient>
+                </DeleteButton>
+              </StatCard>
             ))}
-          </View>
+          </StatsContainer>
         )}
-      </ScrollView>
-    </View>
+      </Content>
+    </Container>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#FFFFFF', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#1F2937', marginBottom: 4 },
-  monthSelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8 },
-  monthButton: { paddingHorizontal: 10 },
-  monthButtonText: { fontSize: 20, fontWeight: 'bold', color: '#3B82F6' },
-  headerSubtitle: { fontSize: 16, color: '#6B7280', fontWeight: '600' },
-  typeSelector: { flexDirection: 'row', padding: 16, gap: 12 },
-  typeButton: { flex: 1, paddingVertical: 12, backgroundColor: '#FFFFFF', borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
-  typeButtonActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
-  typeButtonText: { fontSize: 16, fontWeight: '600', color: '#6B7280' },
-  typeButtonTextActive: { color: '#FFFFFF' },
-  content: { flex: 1 },
-  totalCard: { backgroundColor: '#FFFFFF', margin: 16, marginTop: 0, padding: 24, borderRadius: 16, alignItems: 'center' },
-  totalLabel: { fontSize: 14, color: '#6B7280', marginBottom: 8 },
-  totalAmount: { fontSize: 32, fontWeight: 'bold' },
-  incomeText: { color: '#10B981' },
-  expenseText: { color: '#EF4444' },
-  statDescription: {fontSize: 14,color: "#4B5563",marginBottom: 8,},
-  statsContainer: { padding: 16, paddingTop: 0, gap: 12 },
-  statCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16 },
-  statHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  categoryInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  categoryDot: { width: 12, height: 12, borderRadius: 6 },
-  categoryName: { fontSize: 16, fontWeight: '600', color: '#1F2937' },
-  statCount: { fontSize: 14, color: '#6B7280' },
-  progressBar: { height: 8, backgroundColor: '#F3F4F6', borderRadius: 4, overflow: 'hidden', marginBottom: 12 },
-  progressFill: { height: '100%', borderRadius: 4 },
-  statFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statAmount: { fontSize: 18, fontWeight: 'bold', color: '#1F2937' },
-  statPercentage: { fontSize: 16, fontWeight: '600', color: '#6B7280' },
-  emptyContainer: { padding: 40, alignItems: 'center' },
-  emptyText: { fontSize: 14, color: '#9CA3AF' },
-  deleteButton: {
-  padding: 6,
-  backgroundColor: "#EF4444",
-  borderRadius: 8,
-  alignSelf: "flex-end",
-},
-deleteButtonText: {
-  color: "#FFFFFF",
-  fontSize: 12,
-  fontWeight: "600",
-},
-});
