@@ -252,13 +252,10 @@ export default function AddTransactionScreen() {
     setLoading(true);
 
     try {
-      const fixedDate = new Date(
-        transactionDate.getTime() - transactionDate.getTimezoneOffset() * 60000
-      );
 
-      const year = fixedDate.getFullYear();
-      const month = String(fixedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(fixedDate.getDate()).padStart(2, '0');
+      const year = transactionDate.getFullYear();
+      const month = String(transactionDate.getMonth() + 1).padStart(2, '0');
+      const day = String(transactionDate.getDate()).padStart(2, '0');
 
       const formattedDate = `${year}-${month}-${day}`;
 
